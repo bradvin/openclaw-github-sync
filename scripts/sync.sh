@@ -66,6 +66,18 @@ done < "$MANIFEST"
 # Ensure we never accidentally commit workspace git metadata.
 rm -rf "$SYNC_REPO_DIR/.git"/.openclaw 2>/dev/null || true
 
+# Generate/update sync repo README from template + current change status.
+README_TEMPLATE="$SCRIPT_DIR/../references/README_TEMPLATE.md"
+README_GEN="$SCRIPT_DIR/generate_readme.py"
+STATUS_FILE="$(mktemp)"
+git -C "$SYNC_REPO_DIR" status --porcelain > "$STATUS_FILE"
+if [[ -x "$README_GEN" ]] && [[ -f "$README_TEMPLATE" ]]; then
+  "$README_GEN" "$SYNC_REPO_DIR" "$README_TEMPLATE" "$STATUS_FILE"
+else
+  echo "WARN: README generator/template missing; skipping README update" >&2
+fi
+rm -f "$STATUS_FILE"
+
 # Secret scan (refuse to commit/push if likely secrets are present in the sync repo).
 SCAN_SCRIPT="$SCRIPT_DIR/scan_secrets.py"
 if [[ -x "$SCAN_SCRIPT" ]]; then
