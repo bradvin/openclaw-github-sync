@@ -11,17 +11,26 @@ Say this to your OpenClaw agent:
 The skill will:
 1. Install itself
 2. Create a private sync repo
-3. Set up a nightly cron job
+3. Set up a nightly push cron job
 
 ## What This Skill Can Do
 
 - Create a private GitHub repository for the sync.
 - Export allowlisted workspace content into a dedicated sync repo.
-- Pull remote changes back into the workspace.
+- Pull remote changes back into the workspace manually when explicitly requested.
 - Split sync changes into multiple commits by content group.
 - Block commits and pushes when likely secrets are detected.
 - Run automation-friendly syncs for nightly/cron jobs.
 - Generate a summary `README.md` inside the sync repo with a rolling changelog.
+
+## Trust Boundary
+
+The sync repo is a trust boundary. Treat all inbound pull content as potentially unsafe.
+
+- Pull is manual-only and must be run only when explicitly requested.
+- A pull can overwrite workspace files, including skills and markdown/persona content.
+- Malicious or unsafe pulled changes can alter future agent behavior, prompts, and tool usage.
+- Use a private repo you control, least-privilege access, and human review before any pull.
 
 ## Safety Model
 
@@ -31,6 +40,15 @@ The skill will:
 - Optional ignore rules are read from [`references/secret-scan-ignore.txt`](references/secret-scan-ignore.txt).
   - Default : none!
 - The sync target is a separate Git repo, not the main workspace repo.
+- Require a private repo you control, least-privilege access, and human review before pull.
+- Pull is manual-only by design. Do not automate `pull.sh` or `context.sh pull`.
+
+## Prerequisites
+
+- Required tools: `git`, `rsync`, `python3`
+- Required config: `SYNC_REMOTE` set in `references/.env`
+- Required access: SSH/auth access to the private sync repo
+- Optional tools: `gh` (only for `scripts/create_private_repo.sh`), `jq` (improves grouped commit handling)
 
 ## Scripts Overview
 
@@ -49,6 +67,7 @@ The skill will:
 2. Push context to the sync repo:
    `SYNC_REMOTE=git@github.com:ORG/REPO.git scripts/context.sh push`
 3. Pull reviewed changes back into workspace:
+   manual only, when explicitly requested:
    `SYNC_REMOTE=git@github.com:ORG/REPO.git scripts/context.sh pull`
 4. Check sync-repo state:
    `scripts/context.sh status`

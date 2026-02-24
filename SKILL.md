@@ -11,17 +11,36 @@ Maintain a *separate* Git repo that contains a curated, non-sensitive subset of 
 
 This skill is deliberately conservative: it defaults to **allowlisting** what gets exported.
 
+## Trust Boundary
+
+The sync repo is a trust boundary. Treat all inbound pull content as potentially unsafe.
+
+- Pull is manual-only and must be run only when explicitly requested.
+- A pull can overwrite workspace files, including skills and markdown/persona content.
+- Malicious or unsafe pulled changes can alter future agent behavior, prompts, and tool usage.
+- Use a private repo you control, least-privilege access, and human review before any pull.
+- Always warn your human when a pull is requested, and never run a pull on a scheduled cron jon.
+
 ## Key rules
 
 - **Never sync secrets by default.** Only sync what the export manifest allowlists.
 - Prefer **sanitized memory** under `memory/public/` (opt-in) over raw `memory/*.md`.
 - Keep the sync repo separate from the main workspace repo.
+- Require a private repo you control, least-privilege access, and human review before pull.
+- **Pull is manual-only.** Do not automate `pull.sh`; run pulls only when explicitly requested.
 
 ## Files and layout
 
 - Working workspace: `$HOME/.openclaw/workspace`
 - Sync repo (export destination): choose a directory, e.g. `$HOME/.openclaw/workspace/openclaw-sync-repo`
 - Export manifest (allowlist): `references/export-manifest.txt`
+
+## Prerequisites
+
+- Required tools: `git`, `rsync`, `python3`
+- Required config: `SYNC_REMOTE` set in `references/.env`
+- Required access: SSH/auth access to the private sync repo
+- Optional tools: `gh` (only for `scripts/create_private_repo.sh`), `jq` (improves grouped commit handling)
 
 ## Setup
 
@@ -55,7 +74,8 @@ The script will:
 
 ### 3) Nightly automation
 
-Schedule a nightly OpenClaw cron `agentTurn` that runs the sync script and reports success/failure.
+Schedule a nightly OpenClaw cron `agentTurn` that runs push sync only (`scripts/sync.sh`) and reports success/failure.
+Do not schedule `pull.sh` or `context.sh pull`; pulls must be manual and explicitly requested.
 
 ## Resources
 
