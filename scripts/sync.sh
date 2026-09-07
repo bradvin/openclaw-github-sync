@@ -106,11 +106,13 @@ fi
 
 # Use jq if available; fallback to single commit.
 if command -v jq >/dev/null 2>&1; then
-  mapfile -t group_names < <(jq -r '.groups[].name' "$GROUPS_JSON")
+  group_names=()
+  while IFS= read -r g; do group_names+=("$g"); done < <(jq -r '.groups[].name' "$GROUPS_JSON")
 
   for g in "${group_names[@]}"; do
     commit_msg=$(jq -r ".groups[] | select(.name==\"$g\") | .commitMessage" "$GROUPS_JSON")
-    mapfile -t paths < <(jq -r ".groups[] | select(.name==\"$g\") | .paths[]" "$GROUPS_JSON")
+    paths=()
+    while IFS= read -r p; do paths+=("$p"); done < <(jq -r ".groups[] | select(.name==\"$g\") | .paths[]" "$GROUPS_JSON")
 
     # Stage paths if they exist and have changes.
     staged_any=0

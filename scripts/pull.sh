@@ -95,7 +95,8 @@ rsync -a "${DRY[@]}" \
 #   agents/<agentId>/**/*.md (including {IDENTITY,SOUL,USER,TOOLS}.md at root)
 OPENCLAW_CONFIG="${OPENCLAW_CONFIG:-$HOME/.openclaw/openclaw.json}"
 if command -v jq >/dev/null 2>&1 && [[ -f "$OPENCLAW_CONFIG" ]] && [[ -d "$SYNC_REPO_DIR/agents" ]]; then
-  mapfile -t agent_rows < <(jq -r '.agents.list[] | [.id, (.workspace // "")] | @tsv' "$OPENCLAW_CONFIG")
+  agent_rows=()
+  while IFS= read -r row; do agent_rows+=("$row"); done < <(jq -r '.agents.list[] | [.id, (.workspace // "")] | @tsv' "$OPENCLAW_CONFIG")
   for row in "${agent_rows[@]}"; do
     agent_id="$(echo "$row" | cut -f1)"
     agent_ws="$(echo "$row" | cut -f2)"
